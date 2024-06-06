@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <center><h1>MY TODO LIST APP</h1>
+    <form id="listform">
+        <input type="hidden" name="id" id="id" value=""/><br/>
+        TOPIC: &nbsp; &nbsp;&nbsp;<input type="text" name="name" id="name" placeholder="Put your todo item name here" required><br/> <br/><br/>
+        DESCRIPTION: &nbsp; &nbsp;&nbsp;<input type="text" name="description" id="description" placeholder="Put your todo item description here" required> <br/> <br/><br/>
+        &nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<button type="submit">LIST THE ITEM</button>
+    </form>
+    </center>
+    <ul id="todolist"></ul>
+    <script>
+        document.addEventListener("DOMContentLoaded", function(e) {
+            const listform = document.getElementById("listform");
+            const todolist = document.getElementById("todolist");
+
+            listform.addEventListener("submit", function(event) {
+                event.preventDefault();
+                const id = document.getElementById("id").value;
+                const name = document.getElementById("name").value;
+                const description = document.getElementById("description").value;
+                const todo = { name, description };
+
+                if (id) {
+                    fetch(`/todo/${id}`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(todo)
+                    }).then(response => response.json()).then(data => {
+                        loadall();
+                        listform.reset();
+                    });
+                } else {
+                    fetch("/todo", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(todo)
+                    }).then(response => response.json()).then(data => {
+                        loadall();
+                        listform.reset();
+                    });
+                }
+            });
+
+            function loadall() {
+                fetch("/todo").then(response => response.json()).then(todos => {
+                    todolist.innerHTML = '';
+                    todos.forEach(todo => {
+                        let li = document.createElement('li');
+                        li.textContent = `${todo.name} ${todo.description}`;
+
+                        const editbtn = document.createElement("button");
+                        editbtn.textContent = "UPDATE YOUR TASK";
+                        editbtn.addEventListener("click", () => {
+                            document.getElementById('id').value = todo.id;
+                            document.getElementById('name').value = todo.name;
+                            document.getElementById('description').value = todo.description;
+                        });
+
+                        const deletebtn = document.createElement("button");
+                        deletebtn.textContent = "DELETE YOUR TASK";
+                        deletebtn.addEventListener("click", () => {
+                            fetch(`/todo/${todo.id}`, {
+                                method: "DELETE",
+                            }).then(response => response.json()).then(data => loadall());
+                        });
+
+                        li.appendChild(editbtn);
+                        li.appendChild(deletebtn);
+                        todolist.appendChild(li);
+                    });
+                });
+            }
+
+            loadall();
+        });
+    </script>
+</body>
+</html>
